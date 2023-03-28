@@ -70,3 +70,40 @@ func (c *Connection) Close() error {
 
 	return nil
 }
+
+// Put saves a new pair and returns the version of the inserted data in case of success.
+func (c *Connection) Put(ctx context.Context, key string, value string) (Triplet, error) {
+	lseq, err := c.client.Put(ctx, key, value)
+	if err != nil {
+		c.logger.Warn("PUT failed", zap.String("key", key))
+
+		return Triplet{}, fmt.Errorf("Put failed: %w", err)
+	}
+
+	c.logger.Debug("PUT succeed", zap.String("key", key), zap.String("version", lseq))
+
+	return Triplet{
+		Key:     key,
+		Value:   value,
+		Version: newVersion(lseq),
+	}, nil
+}
+
+// GetLast finds a triplet by key and returns the latest known.
+// Triplets are sorted by
+func (c *Connection) GetLatest(ctx context.Context, key string) (Triplet, error) {
+	value, lseq, err := c.client.GetValue(ctx, key)
+	if err != nil {
+		c.logger.Warn("GET_LATEST failed", zap.String("key", key))
+
+		return Triplet{}, fmt.Errorf("GetValue failed: %w", err)
+	}
+
+	c.logger.Debug("GET_LATEST succeed", zap.String("key", key), zap.String("version", lseq))
+
+	return Triplet{
+		Key:     key,
+		Value:   value,
+		Version: newVersion(lseq),
+	}, nil
+}
