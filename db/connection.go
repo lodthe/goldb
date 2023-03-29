@@ -89,8 +89,11 @@ func (c *Connection) Put(ctx context.Context, key string, value string) (Triplet
 	}, nil
 }
 
-// GetLast finds a triplet by key and returns the latest known.
-// Triplets are sorted by
+// GetLast finds a triplet by key and returns the latest known
+// from the perspective of the replica to which a connection
+// has been established.
+//
+// Triplets are sorted by version.
 func (c *Connection) GetLatest(ctx context.Context, key string) (Triplet, error) {
 	value, lseq, err := c.client.GetValue(ctx, key)
 	if err != nil {
@@ -106,4 +109,20 @@ func (c *Connection) GetLatest(ctx context.Context, key string) (Triplet, error)
 		Value:   value,
 		Version: newVersion(lseq),
 	}, nil
+}
+
+// GetIterator creates an iterator to iterate over values that satisfy the provided
+// options.
+//
+// See the iterator.go file to get list of available filters:
+// - IterKeyEquals
+// - IterFromVersion
+// - IterSetLimit
+func (c *Connection) GetIterator(ctx context.Context, options ...IterOption) (*Iterator, error) {
+	iterator, err := newIterator(c, ctx, options...)
+	if err != nil {
+		return nil, fmt.Errorf("iterator cannot be created: %w", err)
+	}
+
+	return iterator, nil
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/lodthe/goldb/proto/lseqdbpb"
+	"go.uber.org/zap"
 	"google.golang.org/grpc"
 )
 
@@ -44,4 +45,36 @@ func (c *GRPCClient) GetValue(ctx context.Context, key string) (string, string, 
 	}
 
 	return r.Value, r.Lseq, nil
+}
+
+func (c *GRPCClient) Seek(ctx context.Context, lseq string, key *string, limit *uint32) ([]Triplet, error) {
+	r, err := c.cli.SeekGet(ctx, &lseqdbpb.SeekGetRequest{
+		Key:   key,
+		Lseq:  lseq,
+		Limit: limit,
+	})
+
+	if err != nil {
+		l, _ := zap.NewDevelopment()
+		l.Sugar().Info(err.Error())
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	triplets := make([]Triplet, 0, len(r.Items))
+	for _, i := range r.Items {
+		if i == nil {
+			continue
+		}
+
+		triplets = append(triplets, Triplet{
+			Key:   i.Key,
+			Value: i.Value,
+			Lseq:  i.Lseq,
+		})
+	}
+
+	return triplets, nil
 }

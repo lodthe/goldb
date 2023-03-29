@@ -6,51 +6,87 @@ It provides a robust interface for users and hides complicated logic of interact
 
 ## Examples
 
+See the [examples](./examples/) directory for sources.
+
+### Connection initialization
+
 ```go
-package main
+ctx := context.Background()
+logger, _ := zap.NewDevelopment()
 
-import (
-	"context"
-	"fmt"
-
-	"github.com/lodthe/goldb/db"
-	"go.uber.org/zap"
+// Establish a connection with the server.
+conn, err := db.Open(
+    db.WithLogger(logger),
+    // Provide server address here.
+    db.WithServerAddress("bloom.lodthe.me:8888"),
 )
-
-func main() {
-	ctx := context.Background()
-	logger, _ := zap.NewDevelopment()
-
-	conn, err := db.Open(
-		db.WithLogger(logger),
-		db.WithServerAddress("bloom.lodthe.me:8888"),
-	)
-	if err != nil {
-		logger.Error(err.Error())
-	}
-
-	defer conn.Close()
-
-	key := "user#10"
-    value := "name:John"
-
-	triplet, err := conn.Put(ctx, key, value)
-	if err != nil {
-		logger.Fatal("failed to put", zap.Error(err))
-	}
-
-	triplet, err = conn.GetLatest(ctx, key)
-	if err != nil {
-		logger.Fatal("failed to get latest", zap.Error(err))
-	}
-
-	logger.Sugar().Infof("got values: %s -> %s (%s)", triplet.Key, triplet.Value, triplet.Version)
-
-    // Output:
-    // got values: user#10 -> name:John (#000000002000000000000005)
+if err != nil {
+    log.Fatal("failed to connect:", err)
 }
 
+defer conn.Close()
 ```
+
+### Data model
+
+Database record is represented as a triplet:
+
+```go
+type Triplet struct {
+    Key     string
+    Value   string
+    Version Version
+}
+```
+
+`Version` is a unique value that represents internal partial-ordered version (Lamport's sequence number).
+
+### Put / GetLatest
+
+```go
+key := "Alice"
+value := "Alice's shopping cart"
+
+// Create a new record.
+triplet, err := conn.Put(ctx, key, value)
+if err != nil {
+    log.Fatal("put failed:", err)
+}
+
+// Get the latest value for "Alice" key.
+triplet, err = conn.GetLatest(ctx, key)
+if err != nil {
+    log.Fatal("get latest failed:", err)
+}
+
+log.Printf("got values: %s -> %s (%s)", triplet.Key, triplet.Value, triplet.Version)
+```
+
+## Iterator
+
+It is possible to iterate over data:
+
+```go
+options := []db.IterOption{
+    // Get only triplets with "Alice" key.
+    // If no options provided, all triplets will be returned.
+    db.IterKeyEquals("Alice"),
+}
+
+iterator, err := conn.GetIterator(context.Background(), options...)
+if err != nil {
+    logger.Fatal(err.Error())
+}
+
+for iterator.HasNext() {
+    item, err := iterator.GetNext()
+    // Handle error.
+
+    log.Printf("[%s] %s -> %s", item.Version, item.Key, item.Value)
+}
+```
+
+Iterator takes a set of options that can set constraints on the returned data.
 
 ## Development
 
