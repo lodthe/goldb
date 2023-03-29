@@ -95,9 +95,13 @@ func (i *Iterator) loadNextBatch() error {
 		return err
 	}
 
+	i.conn.logger.Debug("SEEK succeed", zap.Int("count", len(triplets)))
+
 	// Remove already seen records.
-	for len(triplets) > 0 && triplets[0].Lseq <= i.lseq {
-		triplets = triplets[1:]
+	if i.lseq != zeroVersion.lseq {
+		for len(triplets) > 0 && triplets[0].Lseq <= i.lseq {
+			triplets = triplets[1:]
+		}
 	}
 
 	i.currentBatch = triplets

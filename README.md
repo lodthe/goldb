@@ -62,7 +62,7 @@ if err != nil {
 log.Printf("got values: %s -> %s (%s)", triplet.Key, triplet.Value, triplet.Version)
 ```
 
-## Iterator
+### Iterator
 
 It is possible to iterate over data:
 
@@ -87,6 +87,10 @@ for iterator.HasNext() {
 ```
 
 Iterator takes a set of options that can set constraints on the returned data.
+
+### Telegram Bot
+
+We have implemented a simple Telegram bot that stores state in a LSeqDB using our ORM. See [examples/telegram-bot](./examples/telegram-bot/main.go).
 
 ## Development
 

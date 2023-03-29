@@ -23,6 +23,7 @@ func main() {
 	defer conn.Close()
 
 	options := []db.IterOption{
+		// Get only triplets with "Alice" key.
 		db.IterKeyEquals("Alice"),
 	}
 
@@ -32,10 +33,8 @@ func main() {
 	}
 
 	for iterator.HasNext() {
-		item, err := iterator.GetNext()
-		if err != nil {
-
-		}
+		item, _ := iterator.GetNext()
+		// Handle error.
 
 		logger.Sugar().Infof("[%s] %s -> %s", item.Version, item.Key, item.Value)
 	}

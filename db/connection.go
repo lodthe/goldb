@@ -85,7 +85,7 @@ func (c *Connection) Put(ctx context.Context, key string, value string) (Triplet
 	return Triplet{
 		Key:     key,
 		Value:   value,
-		Version: newVersion(lseq),
+		Version: NewVersion(lseq),
 	}, nil
 }
 
@@ -107,7 +107,7 @@ func (c *Connection) GetLatest(ctx context.Context, key string) (Triplet, error)
 	return Triplet{
 		Key:     key,
 		Value:   value,
-		Version: newVersion(lseq),
+		Version: NewVersion(lseq),
 	}, nil
 }
 
