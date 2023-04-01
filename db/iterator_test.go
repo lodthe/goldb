@@ -23,6 +23,43 @@ func getBatch(start, batchSize int) []dbclient.Triplet {
 	return resultTriplets
 }
 
+func TestIteratorOptions(t *testing.T) {
+	var limit uint32 = 42
+	options := []struct {
+		iterOption IterOption
+		name       string
+	}{
+		{
+			iterOption: IterKeyEquals("it1"),
+			name:       "KeyOption",
+		},
+		{
+			iterOption: IterFromVersion(NewVersion("0000042")),
+			name:       "VersionOption",
+		},
+		{
+			iterOption: IterSetLimit(&limit),
+			name:       "LimitOption",
+		},
+	}
+
+	for _, test := range options {
+		test := test
+		t.Run(test.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+			mock := dbclient.NewMockClient(ctrl)
+
+			conn, err := Open(WithClient(mock))
+			assert.NoError(t, err, "failed to open connection")
+
+			ctx := context.Background()
+			_, err = newIterator(conn, ctx, test.iterOption)
+			assert.NoError(t, err, "failed to create iterator")
+		})
+	}
+}
+
 func TestOneElmentIterator(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()

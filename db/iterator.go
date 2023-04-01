@@ -30,7 +30,7 @@ type Iterator struct {
 }
 
 func newIterator(conn *Connection, ctx context.Context, options ...IterOption) (*Iterator, error) {
-	var limit uint32 = DefaultBatchSize
+
 	it := &Iterator{
 		conn:          conn,
 		ctx:           ctx,
@@ -38,7 +38,6 @@ func newIterator(conn *Connection, ctx context.Context, options ...IterOption) (
 		batchPosition: 0,
 		currentBatch:  nil,
 		lseq:          zeroVersion.lseq,
-		limit:         &limit,
 	}
 
 	for idx, f := range options {
@@ -46,6 +45,11 @@ func newIterator(conn *Connection, ctx context.Context, options ...IterOption) (
 		if err != nil {
 			return nil, fmt.Errorf("option no. %d cannot be applied: %w", idx, err)
 		}
+	}
+
+	if it.limit == nil {
+		var limit uint32 = DefaultBatchSize
+		it.limit = &limit
 	}
 
 	return it, nil
