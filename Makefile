@@ -3,6 +3,7 @@
 build-proto:
 	protoc --go_out=./proto/ --go_opt=module=github.com/lodthe/goldb \
     --go-grpc_out=./proto/ --go-grpc_opt=module=github.com/lodthe/goldb \
+	--experimental_allow_proto3_optional \
     proto/lseqdb.proto
 
 # go install github.com/golang/mock/mockgen

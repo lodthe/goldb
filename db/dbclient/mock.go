@@ -6,49 +6,49 @@ package dbclient
 
 import (
 	context "context"
-	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
+
+	gomock "github.com/golang/mock/gomock"
 )
 
-// MockClient is a mock of Client interface
+// MockClient is a mock of Client interface.
 type MockClient struct {
 	ctrl     *gomock.Controller
 	recorder *MockClientMockRecorder
 }
 
-// MockClientMockRecorder is the mock recorder for MockClient
+// MockClientMockRecorder is the mock recorder for MockClient.
 type MockClientMockRecorder struct {
 	mock *MockClient
 }
 
-// NewMockClient creates a new mock instance
+// NewMockClient creates a new mock instance.
 func NewMockClient(ctrl *gomock.Controller) *MockClient {
 	mock := &MockClient{ctrl: ctrl}
 	mock.recorder = &MockClientMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockClient) EXPECT() *MockClientMockRecorder {
 	return m.recorder
 }
 
-// Put mocks base method
-func (m *MockClient) Put(ctx context.Context, key, value string) (string, error) {
+// CloseConnection mocks base method.
+func (m *MockClient) CloseConnection() error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Put", ctx, key, value)
-	ret0, _ := ret[0].(string)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret := m.ctrl.Call(m, "CloseConnection")
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
-// Put indicates an expected call of Put
-func (mr *MockClientMockRecorder) Put(ctx, key, value interface{}) *gomock.Call {
+// CloseConnection indicates an expected call of CloseConnection.
+func (mr *MockClientMockRecorder) CloseConnection() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Put", reflect.TypeOf((*MockClient)(nil).Put), ctx, key, value)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CloseConnection", reflect.TypeOf((*MockClient)(nil).CloseConnection))
 }
 
-// GetValue mocks base method
+// GetValue mocks base method.
 func (m *MockClient) GetValue(ctx context.Context, key string) (string, string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetValue", ctx, key)
@@ -58,13 +58,28 @@ func (m *MockClient) GetValue(ctx context.Context, key string) (string, string, 
 	return ret0, ret1, ret2
 }
 
-// GetValue indicates an expected call of GetValue
+// GetValue indicates an expected call of GetValue.
 func (mr *MockClientMockRecorder) GetValue(ctx, key interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetValue", reflect.TypeOf((*MockClient)(nil).GetValue), ctx, key)
 }
 
-// Seek mocks base method
+// Put mocks base method.
+func (m *MockClient) Put(ctx context.Context, key, value string) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Put", ctx, key, value)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Put indicates an expected call of Put.
+func (mr *MockClientMockRecorder) Put(ctx, key, value interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Put", reflect.TypeOf((*MockClient)(nil).Put), ctx, key, value)
+}
+
+// Seek mocks base method.
 func (m *MockClient) Seek(ctx context.Context, lseq string, key *string, limit *uint32) ([]Triplet, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Seek", ctx, lseq, key, limit)
@@ -73,22 +88,8 @@ func (m *MockClient) Seek(ctx context.Context, lseq string, key *string, limit *
 	return ret0, ret1
 }
 
-// Seek indicates an expected call of Seek
+// Seek indicates an expected call of Seek.
 func (mr *MockClientMockRecorder) Seek(ctx, lseq, key, limit interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Seek", reflect.TypeOf((*MockClient)(nil).Seek), ctx, lseq, key, limit)
-}
-
-// CloseConnection mocks base method
-func (m *MockClient) CloseConnection() error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CloseConnection")
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// CloseConnection indicates an expected call of CloseConnection
-func (mr *MockClientMockRecorder) CloseConnection() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CloseConnection", reflect.TypeOf((*MockClient)(nil).CloseConnection))
 }

@@ -62,3 +62,56 @@ func TestPut(t *testing.T) {
 		})
 	}
 }
+
+func TestGetLatest(t *testing.T) {
+	testcases := []struct {
+		name string
+
+		key string
+
+		responseValue string
+		responseLseq  string
+		responseErr   error
+	}{
+		{
+			name:          "OK test",
+			key:           "Bob",
+			responseValue: "mango,smoothie",
+			responseLseq:  "0000031",
+			responseErr:   nil,
+		},
+		{
+			name:          "Internal error",
+			key:           "Bob",
+			responseValue: "",
+			responseLseq:  "",
+			responseErr:   errors.New("internal error"),
+		},
+	}
+
+	for _, test := range testcases {
+		test := test
+		t.Run(test.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+			mock := dbclient.NewMockClient(ctrl)
+
+			conn, err := Open(WithClient(mock))
+			assert.NoError(t, err, "failed to open connection")
+
+			ctx := context.Background()
+			mock.EXPECT().GetValue(ctx, test.key).Return(test.responseValue, test.responseLseq, test.responseErr)
+
+			triplet, err := conn.GetLatest(ctx, test.key)
+			if test.responseErr != nil {
+				assert.ErrorIs(t, err, test.responseErr, "error expected")
+				return
+			}
+
+			assert.NoError(t, err, "failed to put kv")
+			assert.Equal(t, test.key, triplet.Key, "invalid key")
+			assert.Equal(t, test.responseValue, triplet.Value, "invalid value")
+			assert.Equal(t, test.responseLseq, triplet.Version.lseq, "invalid version")
+		})
+	}
+}
