@@ -2,7 +2,7 @@ package db
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"strconv"
 	"testing"
 
@@ -49,7 +49,7 @@ func TestOneElmentIterator(t *testing.T) {
 	}
 }
 
-func TestOneAndHalfBatchIterator(t *testing.T) {
+func TestExpectedErrorIterator(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	mock := dbclient.NewMockClient(ctrl)
@@ -61,27 +61,9 @@ func TestOneAndHalfBatchIterator(t *testing.T) {
 	iterator, err := newIterator(conn, ctx)
 	assert.NoError(t, err, "failed to create iterator")
 
-	resultTriplets := getBatch(0, DefaultBatchSize)
-	mock.EXPECT().Seek(ctx, iterator.lseq, iterator.key, iterator.limit).Return(resultTriplets, nil)
+	expectedError := errors.New("internal error")
+	mock.EXPECT().Seek(ctx, iterator.lseq, iterator.key, iterator.limit).Return([]dbclient.Triplet{}, expectedError)
 
-	step := 0
-	for iterator.HasNext() {
-		item, err := iterator.GetNext()
-		assert.NoError(t, err, "failed to get first item")
-
-		dbTriplet := tripletFromInternal(resultTriplets[step])
-		assert.Equal(t, dbTriplet, item, fmt.Sprintf("wrong item after %d step", step))
-
-		step++
-
-		if step == len(resultTriplets) {
-			if len(resultTriplets) == DefaultBatchSize {
-				secondBatch := getBatch(DefaultBatchSize, DefaultBatchSize/2)
-				mock.EXPECT().Seek(ctx, iterator.lseq, iterator.key, iterator.limit).Return(secondBatch, nil)
-				resultTriplets = append(resultTriplets, secondBatch...)
-			} else {
-				mock.EXPECT().Seek(ctx, iterator.lseq, iterator.key, iterator.limit).Return([]dbclient.Triplet{}, nil)
-			}
-		}
-	}
+	_, err = iterator.GetNext()
+	assert.ErrorIs(t, err, ErrIterationFinished, "error expected")
 }
