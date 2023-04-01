@@ -23,23 +23,43 @@ func getBatch(start, batchSize int) []dbclient.Triplet {
 	return resultTriplets
 }
 
+func checkOneElementIter(t *testing.T, mock *dbclient.MockClient, iterator *Iterator, ctx context.Context) {
+	triplet := dbclient.Triplet{Key: "it1", Value: "1", Lseq: "0000042"}
+	resultTriplets := []dbclient.Triplet{triplet}
+	mock.EXPECT().Seek(ctx, iterator.lseq, iterator.key, iterator.limit).Return(resultTriplets, nil)
+
+	for iterator.HasNext() {
+		item, err := iterator.GetNext()
+		assert.NoError(t, err, "failed to get first item")
+
+		dbTriplet := tripletFromInternal(triplet)
+		assert.Equal(t, dbTriplet, item, "wrong frist item")
+
+		mock.EXPECT().Seek(ctx, iterator.lseq, iterator.key, iterator.limit).Return([]dbclient.Triplet{}, nil)
+	}
+}
+
 func TestIteratorOptions(t *testing.T) {
 	var limit uint32 = 42
 	options := []struct {
-		iterOption IterOption
-		name       string
+		iterOptions []IterOption
+		name        string
 	}{
 		{
-			iterOption: IterKeyEquals("it1"),
-			name:       "KeyOption",
+			iterOptions: []IterOption{},
+			name:        "EmptyOptions",
 		},
 		{
-			iterOption: IterFromVersion(NewVersion("0000042")),
-			name:       "VersionOption",
+			iterOptions: []IterOption{IterKeyEquals("it1")},
+			name:        "KeyOption",
 		},
 		{
-			iterOption: IterSetLimit(&limit),
-			name:       "LimitOption",
+			iterOptions: []IterOption{IterFromVersion(NewVersion("0000042"))},
+			name:        "VersionOption",
+		},
+		{
+			iterOptions: []IterOption{IterSetLimit(&limit)},
+			name:        "LimitOption",
 		},
 	}
 
@@ -54,36 +74,11 @@ func TestIteratorOptions(t *testing.T) {
 			assert.NoError(t, err, "failed to open connection")
 
 			ctx := context.Background()
-			_, err = newIterator(conn, ctx, test.iterOption)
+			iterator, err := newIterator(conn, ctx, test.iterOptions...)
 			assert.NoError(t, err, "failed to create iterator")
+
+			checkOneElementIter(t, mock, iterator, ctx)
 		})
-	}
-}
-
-func TestOneElmentIterator(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-	mock := dbclient.NewMockClient(ctrl)
-
-	conn, err := Open(WithClient(mock))
-	assert.NoError(t, err, "failed to open connection")
-
-	ctx := context.Background()
-	iterator, err := newIterator(conn, ctx)
-	assert.NoError(t, err, "failed to create iterator")
-
-	triplet := dbclient.Triplet{Key: "it1", Value: "1", Lseq: "0000042"}
-	resultTriplets := []dbclient.Triplet{triplet}
-	mock.EXPECT().Seek(ctx, iterator.lseq, iterator.key, iterator.limit).Return(resultTriplets, nil)
-
-	for iterator.HasNext() {
-		item, err := iterator.GetNext()
-		assert.NoError(t, err, "failed to get first item")
-
-		dbTriplet := tripletFromInternal(triplet)
-		assert.Equal(t, dbTriplet, item, "wrong frist item")
-
-		mock.EXPECT().Seek(ctx, iterator.lseq, iterator.key, iterator.limit).Return([]dbclient.Triplet{}, nil)
 	}
 }
 
